@@ -8,9 +8,9 @@ import {
   //StudentModel,
   TUsername,
   TlocalGuardian,
-} from './student/student.interface';
+} from './student.interface';
 import bcrypt from 'bcrypt';
-import config from '../config';
+import config from '../../config';
 //import { func } from 'joi';
 
 const userNameSchema = new Schema<TUsername>({
