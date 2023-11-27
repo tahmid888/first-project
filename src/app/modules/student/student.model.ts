@@ -9,8 +9,7 @@ import {
   TUsername,
   TlocalGuardian,
 } from './student.interface';
-import bcrypt from 'bcrypt';
-import config from '../../config';
+
 //import { func } from 'joi';
 
 const userNameSchema = new Schema<TUsername>({
@@ -57,11 +56,14 @@ const localGuardianSchema = new Schema<TlocalGuardian>({
 const studentSchema = new Schema<TStudent, StudentModel>(
   {
     // for static
-    id: { type: String, required: true, unique: true },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
+    id: { type: String, required: [true, 'ID is required'], unique: true },
+    user: {
+      type: Schema.Types.ObjectId,
+      required: [true, 'User ID is required'],
+      unique: true,
+      ref: 'User',
     },
+
     name: {
       type: userNameSchema,
       required: true,
@@ -93,11 +95,7 @@ const studentSchema = new Schema<TStudent, StudentModel>(
       required: true,
     },
     profileImg: { type: String },
-    isActive: {
-      type: String,
-      enum: ['active', 'blocked'],
-      default: 'active',
-    },
+
     isDeleted: {
       type: Boolean,
       default: false,
@@ -112,26 +110,6 @@ const studentSchema = new Schema<TStudent, StudentModel>(
 // virtual Mongoose-> will show property who is  not in database
 studentSchema.virtual('fullName').get(function () {
   return `${this.name.firstName} ${this.name.middleName} ${this.name.lastName}`;
-});
-
-// pre save middleware/ hook : will work on create()  save()
-studentSchema.pre('save', async function (next) {
-  // console.log(this, 'pre hook : we will save  data');
-  // hashing password and save to DB
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const user = this; // current processing document
-  user.password = await bcrypt.hash(
-    user.password,
-    Number(config.bcrypt_salt_rounds),
-  );
-  next();
-});
-
-// post save middleware / hook-> password will looks empty but stored in DB by hashed
-studentSchema.post('save', function (doc, next) {
-  doc.password = '';
-  //console.log('post hook : we will save  data');
-  next();
 });
 
 // query middleware->hide deleted data but not deleted in original database

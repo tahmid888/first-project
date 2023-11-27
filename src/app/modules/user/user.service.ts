@@ -1,35 +1,36 @@
-import { object } from 'joi';
 import config from '../../config';
 import { TStudent } from '../student/student.interface';
-import { NewUser } from './user.interface';
+import { TUser } from './user.interface';
 import { User } from './user.model';
+import { Student } from '../student/student.model';
 
 const createStudentIntoDB = async (password: string, studentData: TStudent) => {
   //create a user object
-  const user: NewUser = {};
+  const userData: Partial<TUser> = {};
   //if password is not given then use a default password
-  user.password = password || (config.default_password as string);
+  userData.password = password || (config.default_password as string);
   //   if (!password) {
-  //     user.password = config.default_password as string;
+  //     userData.password = config.default_password as string;
   //   } else {
-  //     user.password = password;
+  //     userData.password = password;
   //   }
   // set student role
-  user.role = 'student';
+  userData.role = 'student';
   //set manually generated id
-  user.id = '2030100001';
+  userData.id = '2030100001';
 
   // create a user
-  const result = await User.create(user);
+  const newUser = await User.create(userData);
 
   //create a student
-  if (Object.keys(result).length) {
+  if (Object.keys(newUser).length) {
     //set id , _id as user
-    studentData.id = result.id;
-    studentData.user = result._id;
-  }
+    studentData.id = newUser.id; //embedding id
+    studentData.user = newUser._id; //connected to as user <-> student// reference id
 
-  return result;
+    const newStudent = await Student.create(studentData);
+    return newStudent;
+  }
 };
 export const UserServices = {
   createStudentIntoDB,
