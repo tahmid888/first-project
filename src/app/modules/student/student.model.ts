@@ -1,11 +1,9 @@
 import { Schema, model } from 'mongoose';
 import validator from 'validator';
 import {
-  //StudentMethods,
   StudentModel,
   TGuardian,
   TStudent,
-  //StudentModel,
   TUsername,
   TlocalGuardian,
 } from './student.interface';
@@ -103,6 +101,10 @@ const studentSchema = new Schema<TStudent, StudentModel>(
     isDeleted: {
       type: Boolean,
       default: false,
+    },
+    academicDepartment: {
+      type: Schema.Types.ObjectId,
+      ref: 'AcademicDepartment',
     },
   },
   {
