@@ -5,6 +5,9 @@ import { User } from './user.model';
 import { Student } from '../student/student.model';
 import { AcademicSemester } from '../academicSemester/academicSemester.model';
 import { generateStudentId } from './user.utils';
+import mongoose from 'mongoose';
+import AppError from '../../errors/AppErrors';
+import httpStatus from 'http-status';
 
 const createStudentIntoDB = async (password: string, payload: TStudent) => {
   //create a user object
@@ -24,20 +27,43 @@ const createStudentIntoDB = async (password: string, payload: TStudent) => {
     payload.admissionSemester,
   );
 
-  //set generated id
-  userData.id = await generateStudentId(admissionSemester);
+  const session = await mongoose.startSession(); // more than 2 database write operation then use transaction
 
-  // create a user
-  const newUser = await User.create(userData);
+  try {
+    session.startTransaction();
+    //set generated id
+    userData.id = await generateStudentId(admissionSemester);
 
-  //create a student
-  if (Object.keys(newUser).length) {
+    // create a user(transaction-1)
+    const newUser = await User.create([userData], { session }); //array-> for transaction
+    //const newUser = await User.create(userData);//object
+
+    //create a student
+    //if (Object.keys(newUser).length) {
+    if (!newUser.length) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Failed to create user');
+    }
+
     //set id , _id as user
-    payload.id = newUser.id; //embedding id
-    payload.user = newUser._id; //connected to as user <-> student// reference id
+    // payload.id = newUser.id; //embedding id
+    //payload.user = newUser._id; //connected to as user <-> student// reference id
+    payload.id = newUser[0].id;
+    payload.user = newUser[0]._id;
 
-    const newStudent = await Student.create(payload);
+    //create a student(transaction-2)
+    //const newStudent = await Student.create(payload);
+    const newStudent = await Student.create([payload], { session });
+
+    if (!newStudent.length) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Failed to create student');
+    }
+    await session.commitTransaction(); //permanently saved data in DB
+    await session.endSession();
     return newStudent;
+  } catch (err) {
+    await session.abortTransaction();
+    await session.endSession();
+    throw new Error('Failed to delete student');
   }
 };
 export const UserServices = {
