@@ -115,7 +115,7 @@ const studentSchema = new Schema<TStudent, StudentModel>(
 );
 // virtual Mongoose-> will show property who is  not in database
 studentSchema.virtual('fullName').get(function () {
-  return `${this.name.firstName} ${this.name.middleName} ${this.name.lastName}`;
+  return `${this?.name?.firstName} ${this?.name?.middleName} ${this?.name?.lastName}`;
 });
 
 // query middleware->hide deleted data but not deleted in original database
