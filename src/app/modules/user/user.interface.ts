@@ -4,6 +4,7 @@ import { USER_ROLE } from './user.constant';
 
 export interface TUser {
   id: string;
+  email: string;
   password: string;
   needsPasswordChange: boolean;
   passwordChangedAt?: Date;
@@ -11,7 +12,7 @@ export interface TUser {
   status: 'in-progress' | 'blocked';
   isDeleted: boolean;
 }
-// Custom made statics
+// Custom made statics interface
 export interface UserModel extends Model<TUser> {
   isUserExistByCustomId(id: string): Promise<TUser>;
   isPasswordMatched(

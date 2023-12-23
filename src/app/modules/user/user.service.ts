@@ -17,6 +17,7 @@ import { TFaculty } from '../faculty/faculty.interface';
 import { AcademicDepartment } from '../academicDepartment/academicDepartment.model';
 import { Faculty } from '../faculty/faculty.model';
 import { Admin } from '../admin/admin.model';
+import { verifyToken } from '../Auth/auth.utils';
 
 // create student
 const createStudentIntoDB = async (password: string, payload: TStudent) => {
@@ -31,6 +32,7 @@ const createStudentIntoDB = async (password: string, payload: TStudent) => {
   //   }
   // set student role
   userData.role = 'student';
+  userData.email = payload.email;
 
   // find academic semester info
   const admissionSemester = await AcademicSemester.findById(
@@ -87,7 +89,7 @@ const createFacultyIntoDB = async (password: string, payload: TFaculty) => {
 
   // set faculty role
   userData.role = 'faculty';
-
+  userData.email = payload.email;
   // find academic department  info
   const academicDepartment = await AcademicDepartment.findById(
     payload.academicDepartment,
@@ -143,7 +145,7 @@ const createAdminIntoDB = async (password: string, payload: TFaculty) => {
 
   //set student role
   userData.role = 'admin';
-
+  userData.email = payload.email;
   const session = await mongoose.startSession();
 
   try {
@@ -179,8 +181,30 @@ const createAdminIntoDB = async (password: string, payload: TFaculty) => {
     throw new Error(err);
   }
 };
+
+// individual token -> authorize
+// identify each role
+const getMe = async (token: string) => {
+  const decoded = verifyToken(token, config.jwt_access_secret as string);
+  const { userId, role } = decoded;
+
+  let result = null;
+  if (role === 'student') {
+    result = await Student.findOne({ id: userId }).populate('user');
+  }
+  if (role === 'admin') {
+    result = await Admin.findOne({ id: userId }).populate('user');
+  }
+
+  if (role === 'faculty') {
+    result = await Faculty.findOne({ id: userId }).populate('user');
+  }
+
+  return result;
+};
 export const UserServices = {
   createStudentIntoDB,
   createFacultyIntoDB,
   createAdminIntoDB,
+  getMe,
 };
